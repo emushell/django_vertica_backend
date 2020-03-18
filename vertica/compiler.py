@@ -6,21 +6,6 @@ from django.db.models.sql.compiler import *
 ENFORCE_CONSTRAINTS_VALIDATION = getattr(settings, "ENFORCE_CONSTRAINTS_VALIDATION", True)
 
 
-# class SQLInsertCompiler(SQLInsertCompiler):
-#
-#     def execute_sql(self, return_id=False):
-#         with atomic(using=self.using):
-#             result = super(SQLInsertCompiler, self).execute_sql(return_id)
-#
-#             if ENFORCE_CONSTRAINTS_VALIDATION:
-#                 self.connection.ops.validate_constraints(
-#                     self.connection.currsor(),
-#                     self.query.get_meta().db_table
-#                 )
-#
-#             return result
-
-
 class SQLUpdateCompiler(SQLUpdateCompiler):
     def as_sql(self):
         """
