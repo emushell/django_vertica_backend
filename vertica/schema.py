@@ -28,7 +28,6 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         if result:
             constraint_name = result[0]
             drop_statement = self._delete_constraint_sql(self.sql_delete_unique, model, constraint_name)
-            # print(str(drop_statement))
             self.execute(drop_statement)
             super().alter_field(model, old_field, new_field, strict)
             create_statement = self._create_unique_sql(model, [new_field.column], constraint_name)

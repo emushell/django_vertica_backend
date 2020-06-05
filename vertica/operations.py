@@ -14,7 +14,8 @@ class DatabaseOperations(BaseDatabaseOperations):
         return '"%s"' % name
 
     def last_insert_id(self, cursor, table_name, pk_name):
-        return cursor.execute("SELECT LAST_INSERT_ID()")
+        cursor.execute("SELECT LAST_INSERT_ID()")
+        return cursor.fetchone()[0]
 
     def date_extract_sql(self, lookup_type, field_name):
         if lookup_type == 'week_day':
