@@ -1,6 +1,7 @@
 import sys
 
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.asyncio import async_unsafe
 
 try:
     import vertica_python as Database
@@ -15,6 +16,7 @@ from .features import DatabaseFeatures
 from .introspection import DatabaseIntrospection
 from .operations import DatabaseOperations
 from .schema import DatabaseSchemaEditor
+from .utils import VerticaCursorWrapper
 
 
 class DatabaseWrapper(BaseDatabaseWrapper):
@@ -95,6 +97,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             conn_params['port'] = settings_dict['PORT']
         return conn_params
 
+    @async_unsafe
     def get_new_connection(self, conn_params):
         return Database.connect(**conn_params)
 
@@ -122,3 +125,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         with self.wrap_database_errors:
             cur = self.connection.cursor()
             cur.execute("SET SESSION AUTOCOMMIT TO %s" % mode)
+
+    def make_cursor(self, cursor):
+        """Create Vertica cursor without debug logging."""
+        return VerticaCursorWrapper(cursor, self)

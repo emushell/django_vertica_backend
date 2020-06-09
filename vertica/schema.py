@@ -97,3 +97,10 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
          Skip all statements which are related to index creation or manipulation.
         """
         return []
+
+    def _is_sql_create_index(self, sql):
+        return "CREATE INDEX" in str(sql) or "DROP INDEX" in str(sql)
+
+    def execute(self, sql, params=()):
+        if not self._is_sql_create_index(sql):
+            super().execute(sql, params)

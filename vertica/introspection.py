@@ -54,7 +54,61 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         ]
 
     def get_key_columns(self, cursor, table_name):
-        pass
+        """
+        Return a list of (column_name, referenced_table_name, referenced_column_name)
+        for all key columns in the given table.
+        """
+        key_columns = []
+        cursor.execute("""
+                    select fk.column_name,
+                           fk.reference_table_name,
+                           fk.reference_column_name
+                      from v_catalog.foreign_keys fk
+                     where 1=1
+                       and fk.table_name = %s""", [table_name])
+        key_columns.extend(cursor.fetchall())
+        return key_columns
 
     def get_constraints(self, cursor, table_name):
-        pass
+        """
+        Retrieve any constraints or keys (unique, pk, fk, check, index) across
+        one or more columns.
+        Vertica dose not have indexes
+        """
+        constraints = {}
+        cursor.execute("""
+        select tc.constraint_name,
+               tc.constraint_type
+          from v_catalog.table_constraints tc 
+         where 1=1
+           and tc.table_name = %s
+        """, [table_name])
+
+        for constraint, constraint_type in cursor.fetchall():
+            constraints[constraint] = {
+                "primary_key": constraint_type == "p",
+                "unique": constraint_type in ["p", "u"],
+                "check": constraint_type == "c",
+                "index": False,
+            }
+
+            cursor.execute("""
+            select cc.column_name ,
+                   cc.reference_table_name || '.' || cc.reference_column_name used_cols
+              from constraint_columns cc
+             where 1=1
+               and cc.table_name = %s
+               and cc.constraint_name = %s
+            """, [table_name, constraint])
+
+            columns = []
+            used_columns = []
+            for column, used_cols in cursor.fetchall():
+                columns.append(column)
+                if constraint_type == "f":
+                    used_columns.append(tuple(used_cols.split(".", 1)))
+
+            constraints[constraint]["columns"] = columns
+            constraints[constraint]["foreign_key"] = used_columns if constraint_type == "f" else None
+
+        return constraints
